@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Authenticating - Dropls</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+  <style>
+    body { display:flex; align-items:center; justify-content:center; min-height:100vh; background:var(--bg-primary); }
+    .loading { text-align:center; }
+    .loading h2 { color:var(--text-primary); margin-bottom:12px; font-size:22px; }
+    .loading p { color:var(--text-muted); font-size:14px; }
+    .spinner { margin:0 auto 24px; }
+  </style>
+</head>
+<body>
+  <div class="loading">
+    <div class="spinner"></div>
+    <h2>Authenticating...</h2>
+    <p>Please wait while we sign you in with Discord.</p>
+  </div>
+  <script src="../assets/app.js"></script>
+  <script>
+    (async () => {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token');
+
+      if (token) {
+        localStorage.setItem('token', token);
+        try {
+          const user = await api.get('/auth/me');
+          localStorage.setItem('user', JSON.stringify(user));
+          showToast('Welcome, ' + user.username + '!', 'success');
+          window.location.href = '../dashboard/index.html';
+        } catch (err) {
+          showToast('Failed to fetch user data', 'error');
+          setTimeout(() => window.location.href = 'login.html', 1500);
+        }
+      } else {
+        showToast('Authentication failed', 'error');
+        setTimeout(() => window.location.href = 'login.html', 1500);
+      }
+    })();
+  </script>
+</body>
+</html>
