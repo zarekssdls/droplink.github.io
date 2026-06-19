@@ -1,0 +1,160 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"><script src="https://unpkg.com/lucide@latest"></script><link rel="stylesheet" href="/assets/styles.css"><script src="/assets/config.js"></script><title>DNS · Droplink</title></head>
+<body>
+<div id="app" class="app">
+  <main>
+    <div class="page-head">
+      <div style="display:flex;justify-content:space-between;align-items:start;gap:16px;flex-wrap:wrap">
+        <div>
+          <div class="eyebrow" style="margin-bottom:8px">Dashboard</div>
+          <h1 style="font-size:1.75rem;font-weight:800;letter-spacing:-.02em">DNS Records</h1>
+          <p class="muted" style="margin-top:6px">Manage subdomain records for your domains.</p>
+        </div>
+        <button id="addBtn" class="btn btn-primary"><i data-lucide="plus" style="width:16px;height:16px"></i> Add Record</button>
+      </div>
+      <div class="toolbar">
+        <div id="domainSelector"></div>
+        <input id="search" class="input" style="max-width:320px" placeholder="Search subdomains or values...">
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div id="loading" style="text-align:center;padding:60px 0"><div class="spinner"></div></div>
+      <div id="empty" hidden style="text-align:center;padding:60px 24px;border:1px dashed var(--border);border-radius:16px">
+        <i data-lucide="globe" style="width:36px;height:36px;color:var(--muted-2)"></i>
+        <h2 style="font-size:1.125rem;font-weight:700;margin-top:14px">No DNS records</h2>
+        <p class="muted" style="margin-top:6px;margin-bottom:18px">Add your first record to get started.</p>
+        <button id="emptyAddBtn" class="btn btn-primary"><i data-lucide="plus" style="width:16px;height:16px"></i> Add Record</button>
+      </div>
+      <div id="tableWrap" hidden class="table-wrap">
+        <table>
+          <thead><tr><th>Subdomain</th><th>Type</th><th>Value</th><th>TTL</th><th>Status</th><th></th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <div id="summary" class="muted" style="padding:12px 18px;border-top:1px solid var(--border);font-size:.8125rem;background:var(--bg-soft)"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="modal" hidden class="modal-back">
+  <div class="modal">
+    <h2>Add DNS record</h2>
+    <form id="recordForm" style="display:flex;flex-direction:column;gap:14px">
+      <div>
+        <label class="label">Subdomain</label>
+        <div style="display:flex;align-items:center;gap:0">
+          <input class="input" name="subdomain" required placeholder="panel" style="border-top-right-radius:0;border-bottom-right-radius:0">
+          <div id="domainSuffix" class="muted" style="padding:.65rem .85rem;background:var(--bg-soft);border:1px solid var(--border);border-left:0;border-radius:0 10px 10px 0;font-size:.875rem">.example.com</div>
+        </div>
+      </div>
+      <div>
+        <label class="label">Record type</label>
+        <div class="row-4" id="recordTypes"></div>
+        <input type="hidden" name="type" id="typeInput" value="A">
+      </div>
+      <div class="row-2">
+        <div style="grid-column:1/-1"><label class="label">Value</label><input class="input" name="value" required placeholder="0.0.0.0"></div>
+      </div>
+      <div><label class="label">TTL (seconds)</label><input class="input" type="number" name="ttl" value="3600" required></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button type="button" id="cancelBtn" class="btn btn-secondary" style="flex:1;justify-content:center">Cancel</button>
+        <button type="submit" id="submitBtn" class="btn btn-primary" style="flex:1;justify-content:center">Add Record</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script type="module">
+  import { api, requireAuth } from '/assets/api.js';
+  import { mountShell } from '/assets/dashboard-shell.js';
+  requireAuth();
+  mountShell('/dashboard/dns');
+
+  const state = { selectedDomain:'', domains:[], records:[], search:'' };
+
+  async function loadDomains() {
+    try {
+      state.domains = await api('/domains');
+      if (!state.selectedDomain && state.domains[0]) state.selectedDomain = state.domains[0].name;
+      renderSel();
+      if (state.selectedDomain) loadRecords();
+      else { document.getElementById('loading').hidden=true; document.getElementById('empty').hidden=false; lucide.createIcons(); }
+    } catch {}
+  }
+
+  function renderSel() {
+    const c=document.getElementById('domainSelector');
+    const sel=document.createElement('select');
+    sel.className='select'; sel.style.maxWidth='260px';
+    sel.innerHTML = state.domains.map(d => `<option value="${d.name}" ${d.name===state.selectedDomain?'selected':''}>${d.name}</option>`).join('') || '<option>No domains</option>';
+    sel.addEventListener('change', e => { state.selectedDomain=e.target.value; loadRecords(); });
+    c.replaceChildren(sel);
+    document.getElementById('domainSuffix').textContent='.'+(state.selectedDomain||'example.com');
+  }
+
+  async function loadRecords() {
+    const L=document.getElementById('loading'),E=document.getElementById('empty'),W=document.getElementById('tableWrap');
+    L.hidden=false; E.hidden=true; W.hidden=true;
+    try { state.records = await api('/dns/records?domain='+encodeURIComponent(state.selectedDomain)); render(); }
+    catch { state.records=[]; render(); }
+    finally { L.hidden=true; }
+  }
+
+  function render() {
+    const E=document.getElementById('empty'),W=document.getElementById('tableWrap');
+    const q=state.search.toLowerCase();
+    const f = state.records.filter(r => !q || r.subdomain.toLowerCase().includes(q) || (r.value||'').toLowerCase().includes(q));
+    if (!f.length) { E.hidden=false; W.hidden=true; lucide.createIcons(); return; }
+    W.hidden=false; E.hidden=true;
+    document.getElementById('rows').innerHTML = f.map(r => {
+      const cls = r.status==='active' ? 'badge-online' : 'badge-pending';
+      const dot = r.status==='active' ? 'dot-on' : 'dot-pending';
+      return `<tr>
+        <td><code>${r.subdomain}.${r.domain}</code></td>
+        <td><span class="badge mono">${r.type}</span></td>
+        <td><code>${r.value}</code></td>
+        <td class="muted">${r.ttl}s</td>
+        <td><span class="badge ${cls}"><span class="dot ${dot}"></span>${r.status}</span></td>
+        <td style="text-align:right"><button class="btn btn-danger" data-delete="${r._id}" style="padding:.4rem .6rem"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button></td>
+      </tr>`;
+    }).join('');
+    document.getElementById('summary').textContent = `Showing ${f.length} of ${state.records.length} records`;
+    document.querySelectorAll('[data-delete]').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm('Delete this DNS record?')) return;
+      await api('/dns/records/'+b.dataset.delete, { method:'DELETE' });
+      loadRecords();
+    }));
+    lucide.createIcons();
+  }
+
+  document.getElementById('search').addEventListener('input', e => { state.search=e.target.value; render(); });
+
+  const types=['A','CNAME','MX','TXT'];
+  const tBox=document.getElementById('recordTypes');
+  tBox.innerHTML = types.map(t => `<button type="button" data-t="${t}" class="type-btn">${t}</button>`).join('');
+  function selT(t){document.getElementById('typeInput').value=t;tBox.querySelectorAll('[data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===t));}
+  selT('A');
+  tBox.addEventListener('click', e => { const b=e.target.closest('[data-t]'); if (b) selT(b.dataset.t); });
+
+  const modal=document.getElementById('modal');
+  document.getElementById('addBtn').addEventListener('click', () => modal.hidden=false);
+  document.getElementById('emptyAddBtn').addEventListener('click', () => modal.hidden=false);
+  document.getElementById('cancelBtn').addEventListener('click', () => modal.hidden=true);
+
+  document.getElementById('recordForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn=document.getElementById('submitBtn'); btn.disabled=true; btn.textContent='Adding...';
+    const fd=new FormData(e.currentTarget);
+    try {
+      await api('/dns/records', { method:'POST', body: JSON.stringify({
+        domain: state.selectedDomain, subdomain: fd.get('subdomain'),
+        type: fd.get('type'), value: fd.get('value'), ttl: Number(fd.get('ttl')),
+      })});
+      modal.hidden=true; e.currentTarget.reset(); selT('A'); loadRecords();
+    } catch (err) { alert('Failed: '+err.message); }
+    finally { btn.disabled=false; btn.textContent='Add Record'; }
+  });
+
+  loadDomains();
+</script>
+</body></html>

@@ -1,0 +1,32 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"><script src="https://unpkg.com/lucide@latest"></script><link rel="stylesheet" href="/assets/styles.css"><script src="/assets/config.js"></script><title>Signing you in · Droplink</title></head>
+<body>
+<div class="auth-shell">
+  <div class="auth-card" style="text-align:center">
+    <div id="loading">
+      <div class="spinner" style="margin-bottom:14px"></div>
+      <p class="muted">Authenticating with Discord...</p>
+    </div>
+    <div id="errorBox" hidden>
+      <h1 style="font-size:1.25rem;font-weight:700;margin-bottom:8px;color:var(--danger)">Authentication failed</h1>
+      <p class="muted" id="errorMsg" style="margin-bottom:18px"></p>
+      <a href="/auth/login" class="btn btn-primary">Back to Sign In</a>
+    </div>
+  </div>
+</div>
+<script type="module">
+  import { API, setToken } from '/assets/api.js';
+  const p = new URLSearchParams(location.search);
+  const code = p.get('code'); const err = p.get('error');
+  function showError(m){document.getElementById('loading').hidden=true;document.getElementById('errorBox').hidden=false;document.getElementById('errorMsg').textContent=m;}
+  if (err) showError('Authentication failed. Please try again.');
+  else if (!code) showError('No authorization code received.');
+  else {
+    fetch(API + '/auth/discord/callback', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ code }),
+    }).then(r => r.ok ? r.json() : Promise.reject(new Error('Auth failed')))
+      .then(d => { setToken(d.token); localStorage.setItem('authUser', JSON.stringify(d.user)); location.href='/dashboard'; })
+      .catch(e => showError(e.message || 'Failed to authenticate.'));
+  }
+</script>
+</body></html>
