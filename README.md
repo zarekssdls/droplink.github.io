@@ -1,89 +1,116 @@
-# Droplink - Free Subdomains for Server Panels
+# Droplink — Setup Guide
 
-Droplink provides instant, free subdomains for game servers and hosting panels. No DNS setup required, just create your account and get a professional subdomain in seconds.
+## Prerequisites
+- **Node.js** v18+ ([nodejs.org](https://nodejs.org))
+- A **Cloudflare** account with at least one active zone (domain)
+- A **Discord** application for OAuth
 
-## Features
+---
 
-- ⚡ **Instant Subdomains** - Get your domain live immediately
-- 🎮 **Panel Compatible** - Works with Pterodactyl, Pelican, and more
-- 🆓 **Always Free** - Core features stay free forever
-- 🚀 **Instant Propagation** - DNS records go live instantly
+## 1 — Clone & Install
 
-## Tech Stack
-
-- **Frontend**: HTML, CSS, JavaScript
-- **Backend**: Node.js / Python (separate repo)
-- **Hosting**: GitHub Pages (frontend)
-
-## Project Structure
-
-```
-.
-├── index.html                    # Landing page
-├── assets/
-│   ├── styles.css               # Main stylesheet (Silver theme)
-│   └── app.js                   # Shared JavaScript utilities
-└── README.md                    # This file
+```bash
+cd DroplinkV3
+npm install
 ```
 
-## Development
+---
 
-### Local Setup
+## 2 — Discord Application Setup
 
-1. Clone the repository
-2. Open `index.html` in your browser
-3. No build step required - pure HTML/CSS/JS
+1. Go to [discord.com/developers/applications](https://discord.com/developers/applications) → **New Application**
+2. Name it `Droplink` (or anything)
+3. Go to **OAuth2** → **General**
+4. Copy **Client ID** and **Client Secret**
+5. Under **Redirects**, add:
+   ```
+   http://localhost:3000/auth/discord/callback
+   ```
+   *(Add your production URL too when deploying)*
 
-### File Organization for GitHub Pages
+---
 
-This site is configured for GitHub Pages hosting:
-- Root `index.html` serves as the landing page
-- All assets are in the `assets/` directory
-- CSS uses CSS variables for easy theming
+## 3 — Cloudflare API Token
 
-## Theme
+1. Go to [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens) → **Create Token**
+2. Use the **"Edit zone DNS"** template
+3. Under **Zone Resources** → select **All zones** (or specific zones you manage)
+4. Click **Continue to summary** → **Create Token**
+5. Copy the token (it only shows once)
 
-The site uses a **Silver theme** with:
-- Dark background (#0f0f0f)
-- Silver accents (#c0c0c0 - #e0e0e0)
-- Clean, modern UI
-- Responsive design
+---
 
-### Color Variables
+## 4 — Environment Variables
 
-All colors are defined in `assets/styles.css` using CSS custom properties:
-
-```css
-:root {
-  --silver: #c0c0c0;
-  --silver-light: #e0e0e0;
-  --silver-dark: #909090;
-  --gradient-silver: linear-gradient(135deg, #d0d0d0 0%, #a8a8a8 50%, #b8b8b8 100%);
-}
+```bash
+cp .env.example .env
 ```
 
-## Customization
+Edit `.env`:
 
-### Changing Colors
+```env
+PORT=3000
+NODE_ENV=development
+SESSION_SECRET=paste_a_long_random_string_here
 
-Edit the `:root` CSS variables in `assets/styles.css`:
+DISCORD_CLIENT_ID=your_discord_client_id
+DISCORD_CLIENT_SECRET=your_discord_client_secret
+DISCORD_REDIRECT_URI=http://localhost:3000/auth/discord/callback
 
-```css
-:root {
-  --bg-primary: #0f0f0f;      /* Main background */
-  --text-primary: #f5f5f5;    /* Main text */
-  --silver: #c0c0c0;          /* Accent color */
-}
+CLOUDFLARE_API_TOKEN=your_cloudflare_api_token
+
+MAX_FREE_RECORDS=3
 ```
 
-## Deployment
+> **Generate SESSION_SECRET:**
+> ```bash
+> node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+> ```
 
-This site is hosted on GitHub Pages:
+---
 
-1. Push changes to `main` branch
-2. GitHub Pages automatically deploys from `/root`
-3. Site is live at `https://zarekssdls.github.io/droplink.github.io/`
+## 5 — Run
 
-## License
+```bash
+# Development (auto-restart on changes)
+npm run dev
 
-All rights reserved © 2026 Droplink
+# Production
+npm start
+```
+
+Server starts at **http://localhost:3000**
+
+---
+
+## Architecture
+
+```
+Landing Page  →  /                    (public)
+Discord Login →  /auth/discord        (redirects to Discord)
+OAuth Return  →  /auth/discord/callback
+Dashboard     →  /dashboard           (requires session)
+
+API (all require auth):
+  GET  /api/stats             — user usage stats
+  GET  /api/domains           — live Cloudflare zone list
+  GET  /api/records?zone_id=  — user's records for a zone
+  POST /api/records           — create (enforces 3-limit)
+  PUT  /api/records/:id       — update
+  DELETE /api/records/:id     — delete
+```
+
+## Database
+
+SQLite database is created automatically at `data/droplink.db` on first run. No setup needed.
+
+---
+
+## Production Deployment
+
+1. Set `NODE_ENV=production` in `.env`
+2. Set `SESSION_SECRET` to a strong random value
+3. Update `DISCORD_REDIRECT_URI` to your real domain
+4. Add your production callback URL to the Discord app
+5. Use a reverse proxy (nginx/Caddy) with SSL in front of the Node server
+6. Run with `npm start` or use PM2: `pm2 start server.js --name droplink`

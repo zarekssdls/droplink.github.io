@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Documentation — Droplink</title>
+  <meta name="description" content="Learn how to create and manage subdomains, point records to game server panels like Pterodactyl and Pelican, and configure your DNS settings." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .doc-layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 48px;
+      padding: var(--section-pad) 0;
+    }
+    @media (max-width: 768px) {
+      .doc-layout {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+      .doc-sidebar {
+        position: static !important;
+      }
+    }
+    .doc-sidebar {
+      position: sticky;
+      top: 100px;
+      height: fit-content;
+    }
+    .doc-sidebar-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+    .doc-nav-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .doc-nav-link {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: color var(--transition);
+    }
+    .doc-nav-link:hover {
+      color: var(--silver-200);
+    }
+    .doc-body {
+      max-width: 800px;
+    }
+    .doc-header {
+      margin-bottom: 40px;
+      border-bottom: 1px solid var(--border-medium);
+      padding-bottom: 24px;
+    }
+    .doc-title {
+      font-size: 2.8rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+    .doc-subtitle {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+    }
+    .doc-content h2 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--silver-200);
+      margin-top: 48px;
+      margin-bottom: 20px;
+      letter-spacing: -0.02em;
+    }
+    .doc-content p {
+      color: var(--text-secondary);
+      font-size: 1rem;
+      line-height: 1.8;
+      margin-bottom: 20px;
+    }
+    .doc-content ol, .doc-content ul {
+      margin-bottom: 24px;
+      padding-left: 20px;
+    }
+    .doc-content li {
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+      line-height: 1.7;
+    }
+    .doc-content strong {
+      color: var(--silver-200);
+    }
+    .doc-step-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      margin: 28px 0;
+    }
+    .doc-step-box h3 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--silver-100);
+      margin-bottom: 12px;
+    }
+    .doc-step-box p:last-child {
+      margin-bottom: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVIGATION -->
+  <header class="nav-wrapper" id="nav">
+    <nav class="nav-container">
+      <a href="index.html" class="nav-logo" aria-label="Droplink home">
+        <div class="logo-icon" aria-hidden="true">
+          <svg width="28" height="32" viewBox="0 0 28 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="14,0 28,8 28,24 14,32 0,24 0,8" fill="none" stroke="rgba(192,198,206,0.3)" stroke-width="0.5"/>
+            <polygon points="14,1 27,8.5 27,23.5 14,31 1,23.5 1,8.5" fill="#0D0D0D"/>
+            <polygon points="14,1 27,8.5 14,16" fill="#2A2A2A"/>
+            <polygon points="14,1 1,8.5 14,16" fill="#1A1A1A"/>
+            <polygon points="14,16 27,8.5 27,23.5" fill="#C8CDD6"/>
+            <polygon points="14,16 1,8.5 1,23.5" fill="#8A9099"/>
+            <polygon points="14,16 27,23.5 14,31" fill="#4A5058"/>
+            <polygon points="14,16 1,23.5 14,31" fill="#6B7380"/>
+            <line x1="14" y1="1" x2="14" y2="16" stroke="#D6DAE0" stroke-width="0.8" opacity="0.6"/>
+          </svg>
+        </div>
+        <span class="logo-text">Droplink</span>
+      </a>
+
+      <ul class="nav-links" id="navLinks" role="list">
+        <li><a href="index.html#features" class="nav-link">Features</a></li>
+        <li><a href="index.html#panels" class="nav-link">Panels</a></li>
+        <li><a href="index.html#pricing" class="nav-link">Pricing</a></li>
+        <li><a href="docs.html" class="nav-link">Docs</a></li>
+      </ul>
+
+      <a href="login.html" class="btn btn-primary nav-cta" id="navCTA">Login</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <div class="doc-layout">
+      
+      <!-- Sidebar Navigation -->
+      <aside class="doc-sidebar" role="navigation" aria-label="Documentation sections">
+        <div class="doc-sidebar-title">Getting Started</div>
+        <ul class="doc-nav-list">
+          <li><a href="#quickstart" class="doc-nav-link">Quickstart Guide</a></li>
+          <li><a href="#panel-setup" class="doc-nav-link">Panel Setup Guide</a></li>
+          <li><a href="#dns-records" class="doc-nav-link">DNS Records Explained</a></li>
+          <li><a href="#limits" class="doc-nav-link">Limits & Rules</a></li>
+        </ul>
+      </aside>
+
+      <!-- Document Content -->
+      <article class="doc-body">
+        <div class="doc-header">
+          <h1 class="doc-title">Documentation</h1>
+          <p class="doc-subtitle">Learn how to configure subdomains for your server or panel in minutes.</p>
+        </div>
+
+        <div class="doc-content">
+          <h2 id="quickstart">Quickstart Guide</h2>
+          <p>Droplink is designed to get your gaming panels and servers connected to a professional subdomain as quickly as possible. Follow this guide to set up your first record:</p>
+          <ol>
+            <li><strong>Login:</strong> Click the <strong>Login</strong> button on the landing page to authenticate using your Discord account.</li>
+            <li><strong>Select Domain:</strong> From the top bar inside the dashboard, select one of the available domains (e.g. <code>droplink.gg</code>).</li>
+            <li><strong>Add DNS Record:</strong> Click the <strong>+ Add Record</strong> button. Specify your record type, name (prefix), and destination content (IP or Hostname).</li>
+            <li><strong>Save:</strong> Click save. The record is instantly pushed to Cloudflare and propagates globally in seconds.</li>
+          </ol>
+
+          <h2 id="panel-setup">Panel Setup Guide</h2>
+          <p>Whether you're hosting on <strong>Pterodactyl</strong>, <strong>Pelican</strong>, or other game panel software, pointing your domain name is straightforward.</p>
+          
+          <div class="doc-step-box">
+            <h3>Pterodactyl Panel (Nginx / Web Access)</h3>
+            <p>1. In the Droplink Dashboard, create a <strong>CNAME</strong> or <strong>A</strong> record pointing to your node/daemon IP. For example, create <code>panel.yourname.droplink.gg</code> pointing to your VPS IP.</p>
+            <p>2. Configure your Nginx virtual host config file on your VPS to recognise the new subdomain:</p>
+            <p><code>server_name panel.yourname.droplink.gg;</code></p>
+            <p>3. Generate an SSL certificate using Certbot:</p>
+            <p><code>certbot --nginx -d panel.yourname.droplink.gg</code></p>
+          </div>
+
+          <div class="doc-step-box">
+            <h3>Pelican Panel Setup</h3>
+            <p>For the modern Pelican panel, create a record using Droplink. Toggle <strong>Cloudflare proxying (orange cloud)</strong> on or off depending on whether you require raw TCP access or standard HTTPS proxying. We recommend leaving proxying enabled for panel web traffic to benefit from DDoS protection.</p>
+          </div>
+
+          <h2 id="dns-records">DNS Records Explained</h2>
+          <p>Droplink supports multiple standard DNS record types to accommodate different gaming requirements:</p>
+          <ul>
+            <li><strong>A Records:</strong> Points a subdomain to an IPv4 address (e.g. <code>192.0.2.1</code>). Ideal for direct server access or panel nodes.</li>
+            <li><strong>AAAA Records:</strong> Points a subdomain to an IPv6 address.</li>
+            <li><strong>CNAME Records:</strong> Points a subdomain to another hostname (e.g. <code>node1.hoster.com</code>). Ideal for virtual hosting.</li>
+            <li><strong>TXT/MX Records:</strong> Used for verification and setting up custom mail services if required.</li>
+          </ul>
+
+          <h2 id="limits">Limits & Rules</h2>
+          <p>Currently, users on the <strong>Free Plan</strong> are permitted a maximum of <strong>3 DNS records</strong>. This allows you to manage up to three distinct game panels or server addresses. If you require additional records or support for custom domains, consider joining our waitlist for the Pro plan.</p>
+        </div>
+      </article>
+
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer" role="contentinfo">
+    <div class="container footer-container">
+      <div class="footer-left">
+        <a href="index.html" class="nav-logo footer-logo" aria-label="Droplink home">
+          <div class="logo-icon" aria-hidden="true">
+            <svg width="22" height="26" viewBox="0 0 28 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <polygon points="14,1 27,8.5 27,23.5 14,31 1,23.5 1,8.5" fill="#0D0D0D"/>
+              <polygon points="14,1 27,8.5 14,16" fill="#2A2A2A"/>
+              <polygon points="14,1 1,8.5 14,16" fill="#1A1A1A"/>
+              <polygon points="14,16 27,8.5 27,23.5" fill="#C8CDD6"/>
+              <polygon points="14,16 1,8.5 1,23.5" fill="#8A9099"/>
+              <polygon points="14,16 27,23.5 14,31" fill="#4A5058"/>
+              <polygon points="14,16 1,23.5 14,31" fill="#6B7380"/>
+              <line x1="14" y1="1" x2="14" y2="16" stroke="#D6DAE0" stroke-width="0.8" opacity="0.6"/>
+            </svg>
+          </div>
+          <span class="logo-text">Droplink</span>
+        </a>
+        <p class="footer-copy">&copy; 2026 Droplink. All rights reserved.<br />Free subdomains for gamers &amp; server admins.</p>
+      </div>
+      <nav class="footer-links" aria-label="Footer navigation">
+        <a href="privacy.html" class="footer-link">Privacy</a>
+        <a href="terms.html" class="footer-link">Terms</a>
+        <a href="index.html#pricing" class="footer-link">Pricing</a>
+        <a href="docs.html" class="footer-link">Docs</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    // Adjust header dynamically on client
+    (async function checkAuth() {
+      if (window.location.protocol !== 'file:') {
+        try {
+          const res = await fetch('/auth/me');
+          if (res.ok) {
+            const navCTA = document.getElementById('navCTA');
+            if (navCTA) {
+              navCTA.href = '/dashboard';
+              navCTA.textContent = 'Dashboard';
+            }
+          }
+        } catch (e) {}
+      }
+    })();
+  </script>
+</body>
+</html>
